@@ -8,7 +8,7 @@ A full RAG (Retrieval-Augmented Generation) pipeline that lets you upload any PD
 
 Link : notebook-llm-production.up.railway.app
 
-> Example: https://notebooklm-rag.onrender.com
+> Example: https://notebook-llm-production.up.railway.app/
 
 ---
 

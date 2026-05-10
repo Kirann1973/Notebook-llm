@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NotebookLM RAG</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+      --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-12: 3rem; --space-16: 4rem;
+      --color-bg: #f7f6f2; --color-surface: #f9f8f5; --color-surface-2: #fbfbf9;
+      --color-border: #d4d1ca; --color-text: #28251d; --color-text-muted: #7a7974;
+      --color-primary: #01696f; --color-primary-hover: #0c4e54; --color-primary-highlight: #cedcd8;
+      --radius-md: 0.5rem; --radius-lg: 0.75rem; --radius-xl: 1rem;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.06); --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+      --font-body: 'Satoshi', sans-serif;
+      --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    [data-theme="dark"] {
+      --color-bg: #171614; --color-surface: #1c1b19; --color-surface-2: #201f1d;
+      --color-border: #393836; --color-text: #cdccca; --color-text-muted: #797876;
+      --color-primary: #4f98a3; --color-primary-hover: #227f8b; --color-primary-highlight: #313b3b;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.2); --shadow-md: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.6;
+      background: var(--color-bg);
+      color: var(--color-text);
+    }
+    button, input, textarea { font: inherit; }
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: var(--space-4);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-4);
+      margin-bottom: var(--space-8);
+      padding: var(--space-4) 0;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .logo {
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+      display: grid; place-items: center;
+      color: white;
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .brand h1 { font-size: var(--text-xl); line-height: 1.1; }
+    .brand p { color: var(--color-text-muted); font-size: var(--text-sm); }
+    .theme-toggle {
+      min-width: 44px; min-height: 44px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      background: var(--color-surface);
+      color: var(--color-text);
+      cursor: pointer;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: var(--space-6);
+    }
+    .panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-5);
+    }
+    .panel h2 {
+      font-size: var(--text-lg);
+      margin-bottom: var(--space-2);
+    }
+    .muted { color: var(--color-text-muted); font-size: var(--text-sm); }
+    .stack { display: grid; gap: var(--space-4); }
+    .upload-box {
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      background: var(--color-surface-2);
+    }
+    label { display: block; font-size: var(--text-sm); font-weight: 700; margin-bottom: var(--space-2); }
+    input[type="file"], textarea {
+      width: 100%;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-surface-2);
+      color: var(--color-text);
+      padding: var(--space-3);
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    .btn {
+      min-height: 44px;
+      border-radius: var(--radius-lg);
+      padding: 0.75rem 1rem;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all var(--transition-interactive);
+      font-size: var(--text-sm);
+      font-weight: 700;
+    }
+    .btn-primary { background: var(--color-primary); color: white; }
+    .btn-primary:hover { background: var(--color-primary-hover); }
+    .btn-secondary {
+      background: var(--color-surface-2);
+      color: var(--color-text);
+      border-color: var(--color-border);
+    }
+    .chat {
+      display: grid;
+      gap: var(--space-4);
+      align-content: start;
+    }
+    .messages {
+      min-height: 420px;
+      max-height: 60vh;
+      overflow: auto;
+      display: grid;
+      gap: var(--space-4);
+      padding-right: var(--space-2);
+    }
+    .msg {
+      padding: var(--space-4);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface-2);
+    }
+    .msg.user {
+      background: var(--color-primary-highlight);
+      border-color: transparent;
+    }
+    .msg .role {
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-2);
+      font-weight: 700;
+    }
+    .sources {
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--color-border);
+      display: grid;
+      gap: var(--space-2);
+    }
+    .source-item {
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      font-size: var(--text-sm);
+    }
+    .status {
+      padding: var(--space-3);
+      border-radius: var(--radius-md);
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      font-size: var(--text-sm);
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .messages { min-height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h1>NotebookLM RAG</h1>
+          <p>Upload a document and chat with its actual content.</p>
+        </div>
+      </div>
+      <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">🌙</button>
+    </header>
+
+    <main class="layout">
+      <section class="panel stack">
+        <div>
+          <h2>Document upload</h2>
+          <p class="muted">Supported formats: PDF and TXT.</p>
+        </div>
+
+        <div class="upload-box stack">
+          <div>
+            <label for="fileInput">Choose file</label>
+            <input id="fileInput" type="file" accept=".pdf,.txt,application/pdf,text/plain" />
+          </div>
+          <button id="uploadBtn" class="btn btn-primary">Upload and index</button>
+          <div id="uploadStatus" class="status">No document uploaded yet.</div>
+        </div>
+
+        <div>
+          <h2>How this works</h2>
+          <div class="stack muted">
+            <p>1. Your file is uploaded to the server.</p>
+            <p>2. The text is split into chunks.</p>
+            <p>3. Each chunk is converted to embeddings.</p>
+            <p>4. Embeddings are stored in Qdrant.</p>
+            <p>5. Questions retrieve relevant chunks and the answer is generated only from that context.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel chat">
+        <div>
+          <h2>Ask questions</h2>
+          <p class="muted">Answers should stay grounded in the uploaded document.</p>
+        </div>
+
+        <div id="messages" class="messages">
+          <div class="msg">
+            <div class="role">System</div>
+            <div>Upload a document first, then ask a question like “Summarize the main idea” or “What does page 2 say about embeddings?”</div>
+          </div>
+        </div>
+
+        <div class="stack">
+          <div>
+            <label for="questionInput">Question</label>
+            <textarea id="questionInput" placeholder="Ask something about the uploaded document..."></textarea>
+          </div>
+          <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+            <button id="askBtn" class="btn btn-primary">Ask document</button>
+            <button id="clearBtn" class="btn btn-secondary">Clear chat</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let collectionName = null;
+
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const askBtn = document.getElementById('askBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const questionInput = document.getElementById('questionInput');
+    const messages = document.getElementById('messages');
+    const themeToggle = document.querySelector('[data-theme-toggle]');
+    const root = document.documentElement;
+
+    // Theme toggle — in-memory only (no localStorage in sandboxed iframes)
+    let theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    root.setAttribute('data-theme', theme);
+    themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+    themeToggle.addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', theme);
+      themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+    });
+
+    function addMessage(role, text, sources = []) {
+      const wrapper = document.createElement('div');
+      wrapper.className = `msg ${role === 'You' ? 'user' : ''}`;
+
+      const safeText = String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>');
+
+      wrapper.innerHTML = `
+        <div class="role">${role}</div>
+        <div>${safeText}</div>
+      `;
+
+      if (sources.length) {
+        const sourcesBox = document.createElement('div');
+        sourcesBox.className = 'sources';
+        sourcesBox.innerHTML = `<div class="role">Retrieved sources</div>`;
+
+        sources.forEach((s) => {
+          const item = document.createElement('div');
+          item.className = 'source-item';
+          item.textContent = `Page ${s.page}: ${s.preview}`;
+          sourcesBox.appendChild(item);
+        });
+
+        wrapper.appendChild(sourcesBox);
+      }
+
+      messages.appendChild(wrapper);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    uploadBtn.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if (!file) {
+        uploadStatus.textContent = 'Please select a PDF or TXT file first.';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('document', file);
+
+      uploadStatus.textContent = 'Uploading and indexing document... this can take a few seconds.';
+
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+        collectionName = data.collectionName;
+        uploadStatus.textContent = `Uploaded: ${data.fileName} | Indexed ${data.chunksCount} chunks | Session: ${data.collectionName}`;
+        addMessage('System', `Document uploaded successfully: ${data.fileName}. You can now ask questions grounded in this document.`);
+      } catch (err) {
+        uploadStatus.textContent = `Error: ${err.message}`;
+      }
+    });
+
+    askBtn.addEventListener('click', async () => {
+      const question = questionInput.value.trim();
+
+      if (!collectionName) {
+        addMessage('System', 'Please upload and index a document first.');
+        return;
+      }
+
+      if (!question) {
+        addMessage('System', 'Please type a question first.');
+        return;
+      }
+
+      addMessage('You', question);
+      questionInput.value = '';
+
+      try {
+        const res = await fetch('/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, collectionName }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Query failed');
+
+        addMessage('Assistant', data.answer, data.sources || []);
+      } catch (err) {
+        addMessage('System', `Error: ${err.message}`);
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      messages.innerHTML = `
+        <div class="msg">
+          <div class="role">System</div>
+          <div>Chat cleared. Your uploaded document session is still active unless you upload a new file.</div>
+        </div>
+      `;
+    });
+  </script>
+</body>
+</html>
